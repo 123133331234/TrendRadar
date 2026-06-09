@@ -6,6 +6,11 @@ on:
     # cron 使用 UTC 时间。北京时间 7:00 = 前一天 UTC 23:00，北京 8:59 = UTC 00:59，跨 UTC 午夜需写 23,0
     - cron: "*/30 23,0 * * *" # UTC 23:00–00:59 = 北京时间 7:00–8:59，每 30 分钟运行一次（配合 push_window 每天只推一次）
   workflow_dispatch:
+    inputs:
+      ignore_push_window:
+        description: "忽略推送时间窗口，立即推送（用于手动测试）"
+        type: boolean
+        default: false
 
 # 添加权限设置
 permissions:
@@ -63,6 +68,8 @@ jobs:
           NTFY_SERVER_URL: ${{ secrets.NTFY_SERVER_URL }}
           NTFY_TOKEN: ${{ secrets.NTFY_TOKEN }}
           GITHUB_ACTIONS: true
+          # 手动触发并勾选 ignore_push_window 时，临时关闭推送时间窗口（立即推送）；其余情况留空，沿用 config.yaml
+          PUSH_WINDOW_ENABLED: ${{ (github.event_name == 'workflow_dispatch' && inputs.ignore_push_window) && 'false' || '' }}
         run: python main.py
 
       - name: Commit and push if changes
